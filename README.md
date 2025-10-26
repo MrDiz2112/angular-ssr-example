@@ -1,8 +1,6 @@
 # Angular SSR - Полный пример Server-Side Rendering
 
-Этот репозиторий содержит практические примеры использования Server-Side Rendering в Angular, основанные на ключевых концепциях SSR.
-
-> **🚀 Новичок в SSR?** Начните с [`START_HERE.md`](START_HERE.md) для быстрого старта!
+Практические примеры использования Server-Side Rendering в Angular, основанные на статье [Angular SSR - Everything You Need to Know](https://angular.love/angular-ssr-everything-you-need-to-know).
 
 ## 📚 Обзор Angular SSR
 
@@ -29,41 +27,28 @@ Hydration - это процесс, когда Angular "оживляет" сер�
 
 ## 🚀 Запуск проекта
 
-### Установка зависимостей
+### Установка и запуск
 
 ```bash
 npm install
-```
-
-### Разработка (без SSR)
-
-```bash
-npm start
-```
-
-Приложение будет доступно по адресу `http://localhost:4200`
-
-### Сборка и запуск с SSR
-
-```bash
-npm run build:ssr
-npm run serve:ssr
-```
-
-Приложение с SSR будет доступно по адресу `http://localhost:4000`
-
-### Быстрый запуск SSR для разработки
-
-```bash
 npm run dev:ssr
 ```
+
+Приложение будет доступно по адресу `http://localhost:4000`
+
+### Команды
+
+- `npm start` - разработка без SSR (`http://localhost:4200`)
+- `npm run build:ssr` - production сборка
+- `npm run serve:ssr` - запуск SSR сервера
+- `npm run dev:ssr` - быстрый запуск SSR для разработки
 
 ## 📂 Структура проекта
 
 ```
 src/
 ├── app/
-│   ├── pages/              # Страницы с примерами
+│   ├── pages/              # Страницы с примерами SSR
 │   ├── services/           # Сервисы приложения
 │   ├── data/              # Моковые данные
 │   ├── app.component.ts   # Главный компонент
@@ -75,182 +60,56 @@ src/
 server.ts                  # Express сервер для SSR
 ```
 
-**Подробное описание:** [`PROJECT_STRUCTURE.md`](PROJECT_STRUCTURE.md)
-
 ## 💡 Основные возможности SSR
 
 ### 1. Transfer State - Передача данных
 
-**Файлы:** [`src/app/pages/transfer-state/transfer-state.component.ts`](src/app/pages/transfer-state/transfer-state.component.ts)
+**Файл:** [`src/app/pages/transfer-state/transfer-state.component.ts`](src/app/pages/transfer-state/transfer-state.component.ts)
 
 Transfer State позволяет передавать данные с сервера на клиент без повторных HTTP запросов после hydration.
 
 **Как это работает:**
-
 1. На сервере данные загружаются и сохраняются в Transfer State
 2. Transfer State сериализуется в HTML внутри тега `<script>`
 3. На клиенте данные извлекаются из Transfer State
 4. HTTP запрос не выполняется повторно
 
-**Пример использования:**
-
-```typescript
-import { TransferState, makeStateKey } from '@angular/core';
-
-const USERS_KEY = makeStateKey<User[]>('users');
-
-export class TransferStateComponent implements OnInit {
-  private transferState = inject(TransferState);
-  private dataService = inject(DataService);
-  
-  ngOnInit() {
-    const cachedUsers = this.transferState.get(USERS_KEY, null);
-    
-    if (cachedUsers) {
-      // Данные уже есть из Transfer State
-      this.users = cachedUsers;
-    } else {
-      // Загружаем данные и сохраняем в Transfer State
-      this.dataService.getUsers().subscribe(users => {
-        this.users = users;
-        this.transferState.set(USERS_KEY, users);
-      });
-    }
-  }
-}
-```
-
 ### 2. Platform Check - Проверка платформы
 
-**Файлы:** [`src/app/pages/platform-check/platform-check.component.ts`](src/app/pages/platform-check/platform-check.component.ts)
+**Файл:** [`src/app/pages/platform-check/platform-check.component.ts`](src/app/pages/platform-check/platform-check.component.ts)
 
-Некоторый код должен выполняться только в браузере (например, работа с `localStorage`, `window`), а некоторый только на сервере.
-
-**Пример использования:**
-
-```typescript
-import { PLATFORM_ID, inject } from '@angular/core';
-import { isPlatformBrowser, isPlatformServer } from '@angular/common';
-
-export class PlatformCheckComponent {
-  private platformId = inject(PLATFORM_ID);
-  
-  ngOnInit() {
-    if (isPlatformBrowser(this.platformId)) {
-      // Код для браузера
-      const width = window.innerWidth;
-      localStorage.setItem('key', 'value');
-    }
-    
-    if (isPlatformServer(this.platformId)) {
-      // Код для сервера
-      console.log('Рендеринг на сервере');
-    }
-  }
-}
-```
+Некоторый код должен выполняться только в браузере (например, работа с `localStorage`, `window`), а некоторый только на сервере. Используйте `isPlatformBrowser()` и `isPlatformServer()` для проверки окружения.
 
 **Важно:** Всегда проверяйте платформу перед использованием browser-only API!
 
 ### 3. SEO Meta Tags - Мета-теги для поисковой оптимизации
 
-**Файлы:** [`src/app/pages/seo/seo.component.ts`](src/app/pages/seo/seo.component.ts)
+**Файл:** [`src/app/pages/seo/seo.component.ts`](src/app/pages/seo/seo.component.ts)
 
-SSR позволяет поисковым системам и социальным сетям видеть мета-теги, так как они генерируются на сервере.
-
-**Пример использования:**
-
-```typescript
-import { Meta, Title } from '@angular/platform-browser';
-
-export class SeoComponent implements OnInit {
-  private meta = inject(Meta);
-  private title = inject(Title);
-  
-  ngOnInit() {
-    // Title
-    this.title.setTitle('SEO с Angular SSR');
-    
-    // Description
-    this.meta.updateTag({
-      name: 'description',
-      content: 'Описание страницы для SEO'
-    });
-    
-    // Open Graph для Facebook, LinkedIn
-    this.meta.updateTag({ 
-      property: 'og:title', 
-      content: 'SEO с Angular SSR' 
-    });
-    
-    // Twitter Card
-    this.meta.updateTag({ 
-      name: 'twitter:card', 
-      content: 'summary_large_image' 
-    });
-  }
-}
-```
+SSR позволяет поисковым системам и социальным сетям видеть мета-теги, так как они генерируются на сервере. Используйте сервисы `Meta` и `Title` для управления:
+- Title и Description
+- Open Graph (Facebook, LinkedIn)
+- Twitter Cards
 
 ### 4. Hydration - "Оживление" серверного HTML
 
-**Файлы:** [`src/app/app.config.ts`](src/app/app.config.ts)
+**Файл:** [`src/app/app.config.ts`](src/app/app.config.ts)
 
-Hydration включается в конфигурации приложения:
-
-```typescript
-import { provideClientHydration } from '@angular/platform-browser';
-
-export const config: ApplicationConfig = {
-  providers: [
-    provideClientHydration(),
-    // ... другие провайдеры
-  ]
-};
-```
-
-Angular автоматически повторно использует существующую DOM структуру вместо полной перерисовки.
+Включается через `provideClientHydration()` в конфигурации приложения. Angular автоматически повторно использует существующую DOM структуру вместо полной перерисовки.
 
 ## 🛠 Конфигурация SSR
 
 ### Server-side конфигурация
 
 **Файлы:** 
-- [`server.ts`](server.ts) - Express сервер
-- [`src/app/app.config.server.ts`](src/app/app.config.server.ts) - серверная конфигурация Angular
-
-Express сервер обрабатывает запросы и использует Angular CommonEngine для рендеринга:
-
-```typescript
-import { CommonEngine } from '@angular/ssr';
-
-const commonEngine = new CommonEngine();
-
-server.get('*', (req, res) => {
-  commonEngine.render({
-    bootstrap,
-    documentFilePath: indexHtml,
-    url: req.url,
-    publicPath: browserDistFolder,
-  }).then(html => res.send(html));
-});
-```
+- [`server.ts`](server.ts) - Express сервер с CommonEngine
+- [`src/app/app.config.server.ts`](src/app/app.config.server.ts) - серверная конфигурация Angular с `provideServerRendering()`
 
 ### Client-side конфигурация
 
-**Файлы:** [`src/app/app.config.ts`](src/app/app.config.ts)
+**Файл:** [`src/app/app.config.ts`](src/app/app.config.ts)
 
-Клиентская конфигурация включает:
-
-```typescript
-export const config: ApplicationConfig = {
-  providers: [
-    provideRouter(routes),
-    provideClientHydration(),  // Включаем Hydration
-    provideHttpClient(withFetch())  // HTTP клиент с fetch
-  ]
-};
-```
+Клиентская конфигурация включает `provideClientHydration()` для оптимальной производительности.
 
 ## 📝 Дополнительные файлы
 
@@ -266,12 +125,10 @@ export const config: ApplicationConfig = {
 4. **Включайте Hydration** для оптимальной производительности
 5. **Избегайте прямого доступа** к `window`, `document`, `localStorage` без проверки платформы
 
-## 📖 Дополнительные материалы
+## 📖 Источник
 
-- [`QUICK_START.md`](QUICK_START.md) - Инструкция по быстрому запуску
-- [`SSR_GUIDE.md`](SSR_GUIDE.md) - Краткий справочник по Angular SSR с примерами и чек-листом
-- [Angular SSR - Everything You Need to Know](https://angular.love/angular-ssr-everything-you-need-to-know) - Оригинальная статья
+Примеры основаны на статье: [Angular SSR - Everything You Need to Know](https://angular.love/angular-ssr-everything-you-need-to-know)
 
-## 🤝 Вклад
+---
 
 Этот репозиторий создан в образовательных целях. Не стесняйтесь использовать примеры в своих проектах!
